@@ -1,0 +1,55 @@
+import heapq
+import math
+from collections import Counter
+
+
+def build(text):
+    cnt = Counter(text)
+    h = [(c, i, s) for i, (s, c) in enumerate(cnt.items())]
+    heapq.heapify(h)
+    n = len(h)
+    while len(h) > 1:
+        a = heapq.heappop(h)
+        b = heapq.heappop(h)
+        heapq.heappush(h, (a[0] + b[0], n, (a[2], b[2])))
+        n += 1
+    codes = {}
+
+    def walk(node, p):
+        if isinstance(node, str):
+            codes[node] = p or '0'
+            return
+        walk(node[0], p + '0')
+        walk(node[1], p + '1')
+
+    walk(h[0][2], '')
+    return cnt, codes
+
+
+def decode(bits, codes):
+    inv = {v: k for k, v in codes.items()}
+    out, cur = [], ''
+    for b in bits:
+        cur += b
+        if cur in inv:
+            out.append(inv[cur])
+            cur = ''
+    return ''.join(out)
+
+
+text = "Дихлордифенілтрихлорметилметан".lower()
+cnt, codes = build(text)
+encoded = ''.join(codes[c] for c in text)
+
+print("\nСимвол  К-сть  Код")
+for s, c in sorted(cnt.items(), key=lambda x: (-x[1], x[0])):
+    print(f"{s:^6}  {c:^5}  {codes[s]}")
+
+uniform_bits = max(1, math.ceil(math.log2(len(cnt))))
+uniform_len = uniform_bits * len(text)
+
+print("\nЗакодований рядок:", encoded)
+print("Довжина (Хаффман):", len(encoded), "біт")
+print(f"Довжина (рівномірний код, {uniform_bits} біти/символ):", uniform_len, "біт")
+print("Економія:", uniform_len - len(encoded), "біт")
+print("Декодування коректне:", decode(encoded, codes) == text)
